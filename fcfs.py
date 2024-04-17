@@ -4,7 +4,7 @@ from process import Process
 def fcfs(pro: list[Process]):
     pro.sort(key=lambda x: x.arrival_time)
     elapsed, waiting, turnar = 0, 0, 0
-    gui = []
+    gantt = []
     for p in pro:
         p.waiting_time = max(0, elapsed - p.arrival_time)
         waiting += p.waiting_time
@@ -13,13 +13,13 @@ def fcfs(pro: list[Process]):
         p.turnaround_time = elapsed - p.arrival_time
         p.done = True
         turnar += p.turnaround_time
-        gui += [(p.pid, p.burst_time, p.completion_time)]
+        gantt += [(p.pid, p.burst_time, p.completion_time)]
 
     avg_turnaround_time = turnar / len(pro)
     avg_waiting_time = waiting / len(pro)
     #Process.print_process(pro , avg_waiting_time , avg_turnaround_time )
 
-    return gui
+    return gantt
 
 
 
