@@ -19,12 +19,7 @@ from . import (
     WHITE
 ) 
 
-PROCESS_REGISTRY = [Process(1,0,7), Process(2, 2, 4), Process(3, 4, 1), Process(4, 5, 4)]
-QUANTUM = None
-
-#TODO
-# def round_robin():
-#     pass
+PROCESS_REGISTRY = [Process(1, 0, 3), Process(2, 1, 5), Process(3, 12, 10), Process(4, 12, 10)]
 
 class GUIInterface():
     
@@ -44,17 +39,36 @@ class GUIInterface():
             sjf_preemptive,
             non_preemptive_priority,
             preemptive_priority,
-            round_robin.RoundRobin.process
+            round_robin,
         ]
-        self.algorithm =  algos[index]
+        self.algorithm = algos[index]
+        quanta_input = self._menu.get_widget("quanta_input")
+        quanta_change = self._menu.get_widget("quanta_change")
+        priority_input = self._menu.get_widget("priority_input")
+
+        # can't think of a better way, my brain is fried
+        if self.algorithm == non_preemptive_priority or self.algorithm == preemptive_priority:
+            quanta_input.hide()
+            quanta_change.hide()
+            priority_input.show()
+        elif self.algorithm == round_robin:
+            quanta_input.show()
+            quanta_change.show()
+            priority_input.hide()
+        else:
+            quanta_input.hide()
+            quanta_change.hide()
+            priority_input.hide()
 
     def reset(self):
         self._menu.full_reset()
         self._menu.clear()
 
-    def add_process(self, arrival_time, burst_time):
+    def add_process(self, arrival_time, burst_time, priority):
         pid = max([process.pid for process in PROCESS_REGISTRY]) + 1
-        PROCESS_REGISTRY.append(Process(pid, arrival_time, burst_time))
+        PROCESS_REGISTRY.append(
+            Process(pid, arrival_time, burst_time, priority)
+        )
         self._construct_gantt_chart()
 
     def start_update_loop(self, events):
@@ -84,12 +98,12 @@ class GUIInterface():
         # should be used for animating 
         dt = self.clock.tick(FPS) / 1000
 
-    def _construct_gantt_chart(self, processes: list[Process]=PROCESS_REGISTRY):
+    def _construct_gantt_chart(self, processes: list[Process]=PROCESS_REGISTRY, **kwargs):
         y_coordinate = HEIGHT / 3
         rectangle_width = WIDTH - 60
 
         processes = Process.reset_all(processes)
-        rendering_list, avg_waiting_time, avg_turnaround_time = self.algorithm(processes)
+        rendering_list, avg_waiting_time, avg_turnaround_time = self.algorithm(processes, **kwargs)
         total_time = max([process[2] for process in rendering_list])
         chart_unit_time = rectangle_width / total_time
 
@@ -97,16 +111,17 @@ class GUIInterface():
         last_process_end = 30
         for pid, start, completion in rendering_list:
             process_width = (completion - start) * chart_unit_time
+            process_label = f"P:{pid}" if isinstance(pid, int) else pid
+
             self._process_rect_list.append(
                 (
                     pygame.rect.Rect(last_process_end, y_coordinate, process_width, 30),
-                    self.font.render(f"P:{pid}", True, WHITE),
+                    self.font.render(process_label, True, WHITE),
                     self.font.render(f"{completion}", True, WHITE),
                 )
             )
 
             last_process_end = last_process_end - 2 + process_width
-        
         
         self.waiting_time = self.stat_font.render(f"Average Waiting Time: {avg_waiting_time}", True, WHITE)
         self.turnaround_time = self.stat_font.render(f"Average Turn Around Time: {avg_turnaround_time}", True, WHITE)
