@@ -44,8 +44,12 @@ def round_robin(processes: list[Process], **kwargs):
     for process in done:
         total_turnaround += process.turnaround_time
         total_waiting += process.waiting_time
+    
+    if done:
+        total_waiting /= len(done)
+        total_turnaround /= len(done)
         
-    return gantt, total_waiting/len(done), total_turnaround/len(done)
+    return gantt, total_waiting, total_turnaround
                 
 if __name__ == "__main__":
     processes: list[Process] = [Process(1, 0, 3), Process(2, 1, 5), Process(3, 12, 10), Process(4, 12, 10)]
